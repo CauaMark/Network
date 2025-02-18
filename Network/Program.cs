@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Net;
     
 public class Network : IEnumerable<KeyValuePair<int, HashSet<int>>>
 {
@@ -26,30 +23,73 @@ public class Network : IEnumerable<KeyValuePair<int, HashSet<int>>>
 
     public void Connect(int num1, int num2)
     {
-        if (num1 <= 0 || num2 <= 0)
-            throw new ArgumentException("Informe valores maiores que 0");
+        if (!connections.ContainsKey(num1) || !connections.ContainsKey(num2))
+            throw new ArgumentException("Elemento inválido.");
+
+        if (num1 == num2)
+            throw new ArgumentException("Não é possível fazer uma conexão entre números iguais.");
+
         connections[num1].Add(num2);
         connections[num2].Add(num1);
     }
 
     public void Disconnect(int num1, int num2)
     {
-        if (num1 <= 0 || num2 <= 0)
-            throw new ArgumentException("Informe valores maiores que 0");
-
         if (!connections.ContainsKey(num1) || !connections.ContainsKey(num2))
             throw new ArgumentException("Elemento inválido.");
+
+        if (num1 == num2)
+            throw new ArgumentException("Não é existe uma conexão entre números iguais.");
 
         if (connections[num1].Contains(num2))
         {
             connections[num1].Remove(num2);
             connections[num2].Remove(num1);
         }
+        else
+        {
+            Console.WriteLine("Essa conexão não existe.");
+        }
         
     }
     public bool Query(int num1, int num2)
     {
-        return connections.ContainsKey(num1) && connections.ContainsKey(num2) &&  connections[num1].Contains(num2);
+        if (!connections.ContainsKey(num1) || !connections.ContainsKey(num2))
+            throw new ArgumentException("Elemento inválido.");
+
+        if (num1 == num2)
+            throw new ArgumentException("Não é existe uma conexão entre números iguais.");
+
+        if (connections[num1].Contains(num2))
+            return true;
+
+        HashSet<int> visited = new HashSet<int>();
+
+        List<int> needToVisit = new List<int>(connections[num1]);
+
+        visited.Add(num1);
+
+        while (needToVisit.Count > 0)
+        {
+            List<int> nextLevel = new List<int>();
+
+            foreach (int node in needToVisit)
+            {
+                if (!visited.Contains(node))
+                {
+                    visited.Add(node);
+
+                    if (connections[node].Contains(num2))
+                        return true;
+
+                    nextLevel.AddRange(connections[node]);
+                }
+            }
+
+            needToVisit = nextLevel;
+        }
+
+        return false;
     }
 
     public int levelConnection(int num1, int num2)
@@ -59,15 +99,14 @@ public class Network : IEnumerable<KeyValuePair<int, HashSet<int>>>
 
         if (num1 == num2) return 0;
 
+        if (connections[num1].Contains(num2))
+            return 1;
+
+        List<int> needToVisit = new List<int>(connections[num1]);
         HashSet<int> visited = new HashSet<int>();
         int count = 0;
 
-        if (connections[num1].Contains(num2))
-            return count;
-
         visited.Add(num1);
-
-        List<int> needToVisit = new List<int>(connections[num1]);
 
         while (needToVisit.Count > 0)
         {
@@ -149,20 +188,19 @@ public class Network : IEnumerable<KeyValuePair<int, HashSet<int>>>
                         network.Disconnect(num1, num2);
                         break;
                     case 3:
-                        if (!network.Query(num1, num2))
+                        if (network.Query(num1, num2))
                         {
-                            Console.WriteLine("Não existe conexão direta entre esses valores.");
+                            Console.WriteLine("Existe uma conexão entre esses valores.");
                         }
                         else
                         {
-                            Console.WriteLine("Existe conexão direta entre esses valores.");
+                            Console.WriteLine("Não existe uma conexão entre esses valores.");
                         }
                         break;
                     case 4:
                         int quantity = network.levelConnection(num1, num2);
                         Console.WriteLine($"Existem {quantity} conexões.");
                         break;
-
                 }
 
             }
